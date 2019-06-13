@@ -1,0 +1,22 @@
+{
+  "name": "compile-ts",
+  "version": "1.1.0",
+  "main": "lib/index.js",
+  "types": "type.d.ts",
+  "repository": "https://github.com/fightingcat/compile-ts.git",
+  "license": "MIT",
+  "bin": {
+    "compile-ts": "lib/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepublish": "tsc"
+  },
+  "devDependencies": {
+    "@types/node": "^12.0.8"
+  },
+  "dependencies": {
+    "commander": "^2.20.0",
+    "typescript": "^3.5.1"
+  }
+}

@@ -1,4 +1,4 @@
-import ts from 'typescript';
+import * as ts from 'typescript';
 
 export function sortSourceFiles(program: ts.Program, sourceFiles: readonly ts.SourceFile[]) {
     const checker = program.getTypeChecker();

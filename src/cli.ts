@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import fs from 'fs';
+import * as fs from 'fs';
 import { Command } from 'commander';
 import { compile, watch } from './compile';
 

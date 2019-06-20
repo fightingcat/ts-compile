@@ -5,23 +5,30 @@ import { compile, watch } from './compile';
 
 function executeCommand(program: Command) {
     const opts = program.opts();
+    const options = {
+        config: opts.config,
+        output: opts.output,
+        module: opts.module,
+        global: opts.global,
+    };
 
-    if (!opts.outFile || !opts.config) {
+    if (!options.config || !options.output) {
         program.outputHelp();
         return process.exit(1);
     }
-    if (!fs.existsSync(opts.config)) {
+    if (!fs.existsSync(options.config)) {
         console.error(`Specified config file not exists.`);
         return process.exit(2);
     }
-    if (opts.watch) watch(opts.config, opts.outFile);
-    else compile(opts.config, opts.outFile);
+    opts.watch ? watch(options) : compile(options);
 }
 
 executeCommand(new Command()
     .version('1.0.0')
-    .option('-w, --watch', 'watch mode')
-    .option('-c, --config <path>', 'config file')
-    .option('-o, --outFile <path>', 'output file')
+    .option('-w, --watch', 'compile in watch mode')
+    .option('-c, --config <file>', 'tsconfig file')
+    .option('-o, --output <file>', 'output file')
+    .option('-m, --module [format]', 'export top-level names (format: "esm", "cjs")')
+    .option('-g, --global [namespace]', 'export top-level names to a namespace')
     .parse(process.argv)
 );

@@ -1,33 +1,54 @@
-import ts from 'typescript';
+import * as path from 'path';
+import * as ts from 'typescript';
 import { sortSourceFiles } from './sort';
-import { exportTopLevelSymbols } from './export';
+import { getTopLevelNames, modulizeGlobal, modulizeCJS, modulizeESM, modulizeDTS } from './export';
 
-export function compile(configPath: string, outFile: string) {
-    const config = ts.getParsedCommandLineOfConfigFile(configPath, {}, parseConfigHost);
-    const program = config && ts.createProgram(config.fileNames, { ...config.options, outFile });
+interface Options {
+    config: string;
+    output: string;
+    global?: string;
+    module?: "esm" | "cjs";
+}
 
-    if (program) {
-        program.emit(undefined, undefined, undefined, undefined, {
-            before: [
-                getTransformerFactory(program)
-            ]
-        });
+export function compile(options: Options) {
+    const config = ts.getParsedCommandLineOfConfigFile(options.config, {}, parseConfigHost);
+
+    if (config) {
+        const mergedOptions = { ...config.options, outFile: options.output };
+        const program = ts.createProgram(config.fileNames, mergedOptions);
+        const transformers = getTransformers(program, options);
+
+        if (program) {
+            program.emit(undefined, transformers.fileWriter, undefined, undefined, {
+                before: [transformers.preTransformer],
+                after: [transformers.postTransformer],
+            });
+        }
     }
 }
 
-export function watch(configPath: string, outFile: string) {
-    const host = ts.createWatchCompilerHost(configPath, {}, ts.sys, undefined, reportDiagnostic);
+export function watch(options: Options) {
+    const host = ts.createWatchCompilerHost(options.config, {}, ts.sys, undefined, reportDiagnostic);
     const createProgram = host.createProgram;
 
-    host.createProgram = (rootNames, options, ...rest) => {
-        const program = createProgram(rootNames, { ...options, outFile }, ...rest);
+    host.createProgram = (rootNames, compilerOptions, ...rest) => {
+        const mergedOptions = { ...compilerOptions, outFile: options.output };
+        const program = createProgram(rootNames, mergedOptions, ...rest);
+        const transformers = getTransformers(program.getProgram(), options);
+        const getSemanticDiagnostics = program.getSemanticDiagnostics;
         const emit = program.emit;
 
-        program.emit = (a, b, c, d, e) => emit(a, b, c, d, {
-            before: [
-                getTransformerFactory(program.getProgram())
-            ]
-        });
+        // suppress TS2449: blah blah used before its declaration.
+        program.getSemanticDiagnostics = (...rest) => {
+            return getSemanticDiagnostics(...rest)
+                .filter(diagnostic => diagnostic.code !== 2449);
+        };
+        program.emit = (a, b, c, d, e) => {
+            return emit(a, transformers.fileWriter, c, d, {
+                before: [transformers.preTransformer],
+                after: [transformers.postTransformer],
+            });
+        };
         return program;
     };
     ts.createWatchProgram(host);
@@ -53,22 +74,67 @@ function reportDiagnostic(diagnostic: ts.Diagnostic) {
     console.info(ts.formatDiagnosticsWithColorAndContext([diagnostic], formatHost));
 }
 
-function getTransformerFactory(program: ts.Program) {
-    function transformSourceFile(node: ts.SourceFile) {
+function getTransformers(program: ts.Program, options: Options) {
+    const exports = new Map<string, string[]>();
+
+    function transformNothing(node: ts.SourceFile) {
         return node;
     }
-    function transformBundle(node: ts.Bundle) {
-        const sortedFiles = sortSourceFiles(program, node.sourceFiles);
-        return ts.updateBundle(node, sortedFiles.map(exportTopLevelSymbols));
+
+    function sortBundleSourceFiles(node: ts.Bundle) {
+        node.sourceFiles.forEach(sourceFile => {
+            exports.set(sourceFile.fileName, getTopLevelNames(sourceFile));
+        });
+        return ts.updateBundle(node, sortSourceFiles(program, node.sourceFiles));
     }
-    function nothingTransformer(context: ts.TransformationContext) {
-        return transformSourceFile;
+
+    function modulizeBundleFile(node: ts.Bundle) {
+        const sourceFiles = node.sourceFiles.map(sourceFile => {
+            const names = exports.get(sourceFile.fileName);
+
+            if (names) {
+                if (options.global) {
+                    sourceFile = modulizeGlobal(sourceFile, names, options.global);
+                }
+                if (options.module === 'cjs') {
+                    sourceFile = modulizeCJS(sourceFile, names);
+                }
+                if (options.module === 'esm') {
+                    sourceFile = modulizeESM(sourceFile, names);
+                }
+            }
+            return sourceFile;
+        });
+        exports.clear();
+        return ts.updateBundle(node, sourceFiles);
     }
-    function bundleTransformer(context: ts.TransformationContext) {
-        return { transformSourceFile, transformBundle };
+
+    function preTransformer() {
+        return {
+            transformSourceFile: transformNothing,
+            transformBundle: sortBundleSourceFiles,
+        };
     }
-    if (program.getCompilerOptions().outFile) {
-        return bundleTransformer;
+
+    function postTransformer() {
+        return {
+            transformSourceFile: transformNothing,
+            transformBundle: modulizeBundleFile,
+        };
     }
-    return nothingTransformer;
+
+    function fileWriter(fileName: string, data: string, writeBOM: boolean) {
+        const extname = path.extname(fileName);
+        const basename = path.basename(fileName, extname);
+
+        if (extname === '.ts' && path.extname(basename) === '.d') {
+            const sourceFile = ts.createSourceFile(fileName, data, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+            const modulized = modulizeDTS(sourceFile);
+            const printer = ts.createPrinter();
+            data = printer.printFile(modulized);
+        }
+        return ts.sys.writeFile(fileName, data, writeBOM);
+    }
+
+    return { preTransformer, postTransformer, fileWriter };
 }

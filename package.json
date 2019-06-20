@@ -1,6 +1,6 @@
 {
   "name": "ts-compile",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "main": "lib/index.js",
   "types": "type.d.ts",
   "repository": "https://github.com/fightingcat/ts-compile.git",

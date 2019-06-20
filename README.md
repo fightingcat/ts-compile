@@ -128,7 +128,7 @@ declare class B {
 
 Class B precede class A, no runtime error.
 
-### Step5:
+### Step6:
 
 Compile into a module with `ts-compile`
 

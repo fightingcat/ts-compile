@@ -127,11 +127,13 @@ function getTransformers(program: ts.Program, options: Options) {
         const extname = path.extname(fileName);
         const basename = path.basename(fileName, extname);
 
-        if (extname === '.ts' && path.extname(basename) === '.d') {
-            const sourceFile = ts.createSourceFile(fileName, data, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
-            const modulized = modulizeDTS(sourceFile);
-            const printer = ts.createPrinter();
-            data = printer.printFile(modulized);
+        if (options.module) {
+            if (extname === '.ts' && path.extname(basename) === '.d') {
+                const sourceFile = ts.createSourceFile(fileName, data, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS);
+                const modulized = modulizeDTS(sourceFile);
+                const printer = ts.createPrinter();
+                data = printer.printFile(modulized);
+            }
         }
         return ts.sys.writeFile(fileName, data, writeBOM);
     }

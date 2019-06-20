@@ -16,9 +16,14 @@ function executeCommand(program: Command) {
         program.outputHelp();
         return process.exit(1);
     }
-    if (!fs.existsSync(options.config)) {
-        console.error(`Specified config file not exists.`);
+    if (options.module !== 'esm' || options.module !== 'cjs') {
+        console.error(`Unkown module format "${options.module}".\n`);
+        program.outputHelp();
         return process.exit(2);
+    }
+    if (!fs.existsSync(options.config)) {
+        console.error(`Specified config file not exists.\n`);
+        return process.exit(3);
     }
     opts.watch ? watch(options) : compile(options);
 }

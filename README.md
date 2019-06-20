@@ -5,13 +5,13 @@
 
 ## Installing
 
-For npm user:
+For npm users:
 
 ```bash
 npm install -g ts-compile
 ```
 
-For yarn user:
+For yarn users:
 
 ```bash
 yarn global add ts-compile
@@ -118,8 +118,6 @@ class A extends B {
 }
 ```
 
-Class B precede class A, no runtime error.
-
 ```typescript
 // built/bundle.d.ts
 declare class A extends B {
@@ -127,6 +125,8 @@ declare class A extends B {
 declare class B {
 }
 ```
+
+Class B precede class A, no runtime error.
 
 ### Step5:
 
@@ -148,8 +148,6 @@ class A extends B {
 module.exports.A = A;
 ```
 
-Class B precede class A, no runtime error.
-
 ```typescript
 // built/bundle.d.ts
 export declare class A extends B {
@@ -157,5 +155,7 @@ export declare class A extends B {
 export declare class B {
 }
 ```
+
+Class B precede class A, no runtime error.
 
 It's worth to mention that vscode will claim error `TS2449`, if the compiler option `outFile` in `tsconfig.json` is set, so it's better to leave it unset, and execute `ts-compile` with option `--output`.

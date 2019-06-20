@@ -130,14 +130,14 @@ export function modulizeGlobal(sourceFile: ts.SourceFile, exports: string[], nam
 }
 
 export function modulizeDTS(sourceFile: ts.SourceFile) {
-    sourceFile.statements.forEach(statement => {
+    const statements = sourceFile.statements.map(statement => {
         // variable
         if (ts.isVariableStatement(statement)) {
             const declarations = statement.declarationList.declarations;
 
             // skip non-const
             if (!declarations.find(d => !isVarConst(d))) {
-                ts.updateVariableStatement(
+                return ts.updateVariableStatement(
                     statement,
                     addExportModifier(statement),
                     statement.declarationList
@@ -146,7 +146,7 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
         }
         // enum
         else if (ts.isEnumDeclaration(statement)) {
-            ts.updateEnumDeclaration(statement,
+            return ts.updateEnumDeclaration(statement,
                 statement.decorators,
                 addExportModifier(statement),
                 statement.name,
@@ -155,7 +155,7 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
         }
         // namespace/module
         else if (ts.isModuleDeclaration(statement)) {
-            ts.updateModuleDeclaration(
+            return ts.updateModuleDeclaration(
                 statement,
                 statement.decorators,
                 addExportModifier(statement),
@@ -165,7 +165,7 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
         }
         // alias
         else if (ts.isImportEqualsDeclaration(statement)) {
-            ts.updateImportEqualsDeclaration(
+            return ts.updateImportEqualsDeclaration(
                 statement,
                 statement.decorators,
                 addExportModifier(statement),
@@ -175,7 +175,7 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
         }
         // class
         else if (ts.isClassDeclaration(statement)) {
-            ts.updateClassDeclaration(
+            return ts.updateClassDeclaration(
                 statement,
                 statement.decorators,
                 addExportModifier(statement),
@@ -187,7 +187,7 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
         }
         // function
         else if (ts.isFunctionDeclaration(statement)) {
-            ts.updateFunctionDeclaration(
+            return ts.updateFunctionDeclaration(
                 statement,
                 statement.decorators,
                 addExportModifier(statement),
@@ -199,11 +199,12 @@ export function modulizeDTS(sourceFile: ts.SourceFile) {
                 statement.body
             );
         }
+        return statement;
     });
 
     return ts.updateSourceFileNode(
         sourceFile,
-        sourceFile.statements,
+        statements,
         sourceFile.isDeclarationFile,
         sourceFile.referencedFiles,
         sourceFile.typeReferenceDirectives,

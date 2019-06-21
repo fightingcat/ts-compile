@@ -16,7 +16,7 @@ function executeCommand(program: Command) {
         program.outputHelp();
         return process.exit(1);
     }
-    if (options.module !== 'esm' || options.module !== 'cjs') {
+    if (options.module !== 'esm' && options.module !== 'cjs') {
         console.error(`Unkown module format "${options.module}".\n`);
         program.outputHelp();
         return process.exit(2);

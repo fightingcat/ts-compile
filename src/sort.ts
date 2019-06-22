@@ -418,9 +418,6 @@ export function sortSourceFiles(program: ts.Program, sourceFiles: readonly ts.So
     }
 
     function visitModule(node: ts.ModuleDeclaration, depth: number): void {
-        if (!updateDepth(node, depth)) {
-            return;
-        }
         if (node.body) {
             if (node.body.kind == ts.SyntaxKind.ModuleDeclaration) {
                 visitStatement(node.body);
@@ -433,18 +430,12 @@ export function sortSourceFiles(program: ts.Program, sourceFiles: readonly ts.So
     }
 
     function visitEnum(node: ts.EnumDeclaration, depth: number) {
-        if (!updateDepth(node, depth)) {
-            return;
-        }
         node.members.forEach(member => {
             visitExpression(member.initializer, 0);
         });
     }
 
     function visitClassLike(node: ts.ClassLikeDeclaration, depth: number): void {
-        if (!updateDepth(node, depth)) {
-            return;
-        }
         if (node.heritageClauses) {
             const heritage = node.heritageClauses.find(clause => {
                 return clause.token == ts.SyntaxKind.ExtendsKeyword;

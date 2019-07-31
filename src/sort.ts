@@ -139,6 +139,11 @@ export function sortSourceFiles(program: ts.Program, sourceFiles: readonly ts.So
                 visitClassLike(<ts.ClassDeclaration>node, depth);
                 break;
 
+            // method
+            case ts.SyntaxKind.MethodDeclaration:
+                visitFunctionLike(<ts.MethodDeclaration>node, depth);
+                break;
+
             // function
             case ts.SyntaxKind.FunctionDeclaration:
                 visitFunctionLike(<ts.FunctionDeclaration>node, depth);

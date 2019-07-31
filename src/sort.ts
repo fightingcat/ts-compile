@@ -443,6 +443,7 @@ export function sortSourceFiles(program: ts.Program, sourceFiles: readonly ts.So
 
             if (heritage && heritage.types) {
                 heritage.types.forEach(superClass => {
+                    visitExpression(superClass.expression, 0);
                     visitReference(superClass.expression, depth);
                 });
             }

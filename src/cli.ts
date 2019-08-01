@@ -1,39 +1,68 @@
 #!/usr/bin/env node
 import * as fs from 'fs';
+import * as ts from 'typescript';
 import { Command } from 'commander';
 import { compile, watch } from './compile';
 
+const formatHost: ts.FormatDiagnosticsHost = {
+    getCurrentDirectory: ts.sys.getCurrentDirectory,
+    getCanonicalFileName: path => path,
+    getNewLine: () => ts.sys.newLine,
+};
+
+function reportDiagnostic(diagnostics: ts.Diagnostic) {
+    console.info(ts.formatDiagnosticsWithColorAndContext([diagnostics], formatHost));
+}
+
 function executeCommand(program: Command) {
     const opts = program.opts();
-    const options = {
-        config: opts.config,
-        output: opts.output,
-        module: opts.module,
-        global: opts.global,
-    };
 
-    if (!options.config || !options.output) {
+    if (!opts.project || !opts.project) {
         program.outputHelp();
         return process.exit(1);
     }
-    if (options.module && options.module !== 'esm' && options.module !== 'cjs') {
-        console.error(`Unkown module format "${options.module}".\n`);
-        program.outputHelp();
-        return process.exit(2);
-    }
-    if (!fs.existsSync(options.config)) {
+    if (!fs.existsSync(opts.project)) {
         console.error(`Specified config file not exists.\n`);
         return process.exit(3);
     }
-    opts.watch ? watch(options) : compile(options);
+    if (opts.bundleModule) {
+        if (opts.bundleModule !== 'es6' && opts.bundleModule !== 'commonjs') {
+            console.error(`Unkown module format "${opts.bundleModule}".\n`);
+            program.outputHelp();
+            return process.exit(2);
+        }
+    }
+    if (opts.watch) {
+        watch({
+            compilerOptions: {
+                bundleOutput: opts.bundleOutput,
+                bundleModule: opts.bundleModule,
+                bundleGlobal: opts.bundleGlobal,
+            },
+            project: opts.project,
+            reportWatchStatus: reportDiagnostic,
+            reportDiagnostic,
+        });
+    }
+    else {
+        compile({
+            compilerOptions: {
+                bundleOutput: opts.bundleOutput,
+                bundleModule: opts.bundleModule,
+                bundleGlobal: opts.bundleGlobal,
+            },
+            project: opts.project,
+            reportDiagnostic
+        })
+    }
 }
 
 executeCommand(new Command()
-    .version('1.0.0')
+    .version(require('../package.json').version)
     .option('-w, --watch', 'compile in watch mode')
-    .option('-c, --config <file>', 'tsconfig file')
-    .option('-o, --output <file>', 'output file')
-    .option('-m, --module [format]', 'export top-level names (format: "esm", "cjs")')
-    .option('-g, --global [namespace]', 'export top-level names to a namespace')
+    .option('-p, --project <file>', 'project path or tsconfig.json path')
+    .option('-o, --bundleOutput <file>', 'file path to output bundle file')
+    .option('-m, --bundleModule [format]', 'export top-level names (format: "es6", "commonjs")')
+    .option('-g, --bundleGlobal [namespace]', 'export top-level names to a namespace')
     .parse(process.argv)
 );

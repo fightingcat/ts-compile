@@ -1,1 +1,1 @@
-export { compile, watch } from './compile';
+export * from './compile';

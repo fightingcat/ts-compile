@@ -1,8 +1,8 @@
 {
   "name": "ts-compile",
-  "version": "2.0.0",
+  "version": "2.0.3",
   "main": "lib/index.js",
-  "types": "type.d.ts",
+  "types": "lib/index.d.ts",
   "repository": "https://github.com/fightingcat/ts-compile.git",
   "license": "MIT",
   "bin": {

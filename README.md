@@ -21,19 +21,19 @@ yarn global add ts-compile
 
 ```bash
 cd /YourProjectDir
-ts-compile -c tsconfig.json -o built/bundle.js -m cjs
+ts-compile -p tsconfig.json -o built/bundle.js -m cjs
 ```
 
 ## Options
 
 ```
-  -V, --version             # output the version number
-  -h, --help                # output usage information
-  -w, --watch               # compile in watch mode
-  -c, --config <path>       # tsconfig file
-  -o, --outFile <path>      # output file
-  -m, --module [format]     # export top-level names (format: "esm", "cjs")
-  -g, --global [namespace]  # export top-level names to a namespace
+  -V, --version                   # output the version number
+  -h, --help                      # output usage information
+  -w, --watch                     # compile in watch mode
+  -p, --project <path>            # tsconfig file
+  -o, --bundleOutput <path>       # output file
+  -m, --bundleModule [format]     # export top-level names (format: "es6", "commonjs")
+  -g, --bundleGlobal [namespace]  # export top-level names to a namespace
 ```
 
 ## Example
@@ -105,7 +105,7 @@ Class A precede class B, that will cause a runtime error.
 Compile with `ts-compile`
 
 ```bash
-ts-compile -c tsconfig.json -o built/bundle.js
+ts-compile -p tsconfig.json -o built/bundle.js
 ```
 
 Output:
@@ -133,7 +133,7 @@ Class B precede class A, no runtime error.
 Compile into a module with `ts-compile`
 
 ```
-ts-compile -c tsconfig.json -o built/bundle.js -m cjs
+ts-compile -p tsconfig.json -o built/bundle.js -m cjs
 ```
 
 Output:

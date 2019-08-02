@@ -33,6 +33,20 @@ export interface WatchOptions extends CompileOptions {
     reportWatchStatus?: WatchStatusReporter;
 }
 
+const formatHost: ts.FormatDiagnosticsHost = {
+    getCurrentDirectory: ts.sys.getCurrentDirectory,
+    getCanonicalFileName: path => path,
+    getNewLine: () => ts.sys.newLine,
+};
+
+export function reportDiagnostic(diagnostics: ts.Diagnostic) {
+    console.info(ts.formatDiagnostic(diagnostics, formatHost));
+}
+
+export function reportDiagnosticColored(diagnostics: ts.Diagnostic) {
+    console.info(ts.formatDiagnosticsWithColorAndContext([diagnostics], formatHost));
+}
+
 export function compile(options: CompileOptions): Program | undefined {
     const { errors, fileNames, options: compilerOptions } = getParsedCommandline(options);
     const program = ts.createProgram(fileNames, compilerOptions, undefined, undefined, errors);

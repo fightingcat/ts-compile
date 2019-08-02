@@ -80,12 +80,13 @@ export function watch(options: WatchOptions): WatchProgram {
             const { getSemanticDiagnostics, emit } = program;
             const onEmitFile = hookWriteFile(compilerOptions, options.onEmitFile);
 
-            // suppress TS2449: blah blah used before its declaration.
-            // suppress TS2729: blah blah is used before its initialization.
+            // suppress TS2729, TS2449, TS2450: blah blah used before its declaration.
             program.getSemanticDiagnostics = (...rest) => {
                 return getSemanticDiagnostics(...rest)
                     .filter(diagnostic => (
-                        diagnostic.code !== 2449 && diagnostic.code !== 2729
+                        diagnostic.code !== 2729
+                        && diagnostic.code !== 2449
+                        && diagnostic.code !== 2450
                     ));
             };
             program.emit = (sourceFile, _writeFile, cancellationToken, writeBOM) => {
